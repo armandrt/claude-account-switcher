@@ -1,0 +1,86 @@
+name: CI
+
+# Build and test every push and every pull request, through the repo's own
+# scripts so CI and a laptop run the same code path.
+#
+# Cost: macOS runner minutes bill at 10x against a PRIVATE repository's included
+# minutes — one wall-clock minute counts as ten. Public repositories get macOS
+# minutes for free, so this workflow is cheap once claude-account-switcher is
+# public and expensive before that. Until then, watch the billing page.
+
+on:
+  push:
+    branches: ['**']        # branches only; a v* tag is release.yml's job
+  pull_request:
+
+permissions:
+  contents: read
+
+# One run per branch: a new push cancels the run it replaced.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Record the toolchain
+        id: toolchain
+        run: |
+          set -euo pipefail
+          xcode-select -p
+          swift --version
+          # Swift 6 is required (swift-tools-version: 6.0). If a runner image ever
+          # ships an older default, pin one here with:
+          #   sudo xcode-select -s /Applications/Xcode_16.4.app
+          printf 'swift=%s\n' "$(swift --version 2>&1 | head -n 1 | tr -cd '[:alnum:].')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the build directory
+        uses: actions/cache@v4
+        with:
+          # The package has no external dependencies, so there is nothing to
+          # fetch or resolve; what costs time is compiling, and that is what
+          # .build holds. .build-toolchain is the swiftc shim, which
+          # scripts/swiftpm.sh regenerates by itself when the compiler changes.
+          path: |
+            .build
+            .build-toolchain
+          key: build-${{ runner.os }}-${{ steps.toolchain.outputs.swift }}-${{ hashFiles('Package.swift') }}-${{ github.sha }}
+          restore-keys: |
+            build-${{ runner.os }}-${{ steps.toolchain.outputs.swift }}-${{ hashFiles('Package.swift') }}-
+            build-${{ runner.os }}-${{ steps.toolchain.outputs.swift }}-
+
+      - name: Tests
+        # The whole suite through Tests/Runner; CAS_KEYCHAIN_TESTS stays unset,
+        # so nothing touches the real keychain or the network.
+        run: ./scripts/test.sh
+
+      - name: App bundle
+        # Debug on purpose: it reuses the objects the tests just built.
+        run: ./scripts/make-app.sh
+
+      - name: Check the bundle
+        run: |
+          set -euo pipefail
+          APP="$GITHUB_WORKSPACE/ClaudeAccountSwitcher.app"
+          test -x "$APP/Contents/MacOS/ClaudeAccountSwitcher"
+          test -s "$APP/Contents/Resources/AppIcon.icns"
+          # Ad-hoc signed here on purpose: the self-signed identity only exists
+          # on the owner's machine, and a runner has no keychain to hold one.
+          codesign --verify --deep --strict "$APP"
+          IDENTIFIER="$(plutil -extract CFBundleIdentifier raw "$APP/Contents/Info.plist")"
+          if [ "$IDENTIFIER" != "rt.armand.ClaudeAccountSwitcher" ]; then
+            echo "ci: bundle identifier is '$IDENTIFIER', expected rt.armand.ClaudeAccountSwitcher" >&2
+            exit 1
+          fi
+          echo "ci: $(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist") build $(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"

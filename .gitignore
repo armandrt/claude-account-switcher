@@ -1,0 +1,8 @@
+.build/
+.build-toolchain/
+.swiftpm/
+*.app/
+.DS_Store
+*.icns
+*.iconset/
+dist/
