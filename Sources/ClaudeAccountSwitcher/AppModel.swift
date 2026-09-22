@@ -46,6 +46,9 @@ final class AppModel: ObservableObject {
     }
     /// What the armed mode is doing right now, for the footer.  Nil in Manual.
     @Published var policyStatus: PolicyStatus?
+    /// Whether macOS starts the app at login.  Read again each time the panel opens,
+    /// because System Settings can change it behind the app's back.
+    let launchAtLogin = LaunchAtLogin()
 
     /// The dry run shown for an ⌥-click; a plain click switches without it.
     @Published private(set) var pendingSwitch: SwitchPlan?

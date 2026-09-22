@@ -22,6 +22,9 @@ final class LaunchAtLogin: ObservableObject {
         case unavailable
     }
 
+    /// Set by `--screenshot`: the picture draws this state, never the machine's.
+    static var pinned: State?
+
     @Published private(set) var state: State = .unavailable
     /// The last refusal, in words the panel can show.  Cleared by a change that works.
     @Published private(set) var failure: String?
@@ -46,6 +49,7 @@ final class LaunchAtLogin: ObservableObject {
     func openLoginItemsSettings() { SMAppService.openSystemSettingsLoginItems() }
 
     private static func read() -> State {
+        if let pinned { return pinned }
         guard isAvailable else { return .unavailable }
         switch SMAppService.mainApp.status {
         case .enabled: return .on
@@ -97,37 +101,79 @@ final class LaunchAtLogin: ObservableObject {
 }
 
 /// The footer's control: one switch, plus the way out when macOS wants a word.
+/// The state lives on the model, so a sweep hiding the switch does not reset it.
 @MainActor
 struct LaunchAtLoginToggle: View {
-    @StateObject private var login = LaunchAtLogin()
+    @ObservedObject var login: LaunchAtLogin
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .trailing, spacing: 3) {
             HStack(spacing: 8) {
+                if login.state == .needsApproval {
+                    Button("Allow…") { login.openLoginItemsSettings() }
+                        .buttonStyle(ChipButtonStyle())
+                }
                 Toggle(isOn: Binding(get: { login.isEnabled },
                                      set: { login.isEnabled = $0 })) {
-                    Text("Launch at login").font(.system(size: 10))
+                    Text("Launch at login").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
-                .toggleStyle(.switch)
-                .controlSize(.mini)
+                .toggleStyle(MiniSwitchStyle())
                 .disabled(login.state == .unavailable)
                 .help(login.state == .unavailable
                       ? "Only the built app can start at login (scripts/make-app.sh)"
                       : "Start Claude Account Switcher when you log in")
-                Spacer(minLength: 4)
-                if login.state == .needsApproval {
-                    Button("Allow…") { login.openLoginItemsSettings() }
-                        .controlSize(.small)
-                        .font(.system(size: 10))
-                }
             }
             if let failure = login.failure {
                 Text(failure)
                     .font(.system(size: 10))
                     .foregroundStyle(Color(nsColor: .systemOrange))
+                    .multilineTextAlignment(.trailing)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .onAppear { login.refresh() }
+    }
+}
+
+/// A small switch drawn in SwiftUI.  The system one is an AppKit control, which
+/// `ImageRenderer` cannot draw, so the README picture would show a placeholder.
+/// Built on a Button, so keyboard and VoiceOver can flip it too.
+struct MiniSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            MiniSwitchBody(label: configuration.label, isOn: configuration.isOn)
+        }
+        .buttonStyle(MiniSwitchPress())
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(configuration.isOn ? "on" : "off")
+    }
+}
+
+private struct MiniSwitchBody<Label: View>: View {
+    let label: Label
+    let isOn: Bool
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        HStack(spacing: 6) {
+            label
+            Capsule()
+                .fill(isOn ? Color.accentColor : Color.primary.opacity(0.18))
+                .frame(width: 26, height: 15)
+                .overlay(alignment: isOn ? .trailing : .leading) {
+                    Circle().fill(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 0.5, y: 0.5)
+                        .padding(1.5)
+                }
+                .animation(.easeOut(duration: 0.12), value: isOn)
+        }
+        .opacity(isEnabled ? 1 : 0.45)
+        .contentShape(Rectangle())
+    }
+}
+
+private struct MiniSwitchPress: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

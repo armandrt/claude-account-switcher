@@ -146,6 +146,7 @@ extension StatusItemController {
         guard !isOpen else { return }
         isOpen = true
         let start = Date()
+        model.launchAtLogin.refresh()
         resize()
         position()
         panel.orderFrontRegardless()

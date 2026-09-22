@@ -4,7 +4,10 @@ A macOS menu bar app for people with more than one Claude Code login. It shows e
 account's quota and switches the live login in one click.
 
 <p align="center">
-  <img src="docs/panel.png" width="400" alt="The panel: three accounts with session, weekly and model quota bars.">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/panel-dark.png">
+    <img src="docs/panel.png" width="400" alt="The panel: three accounts with session, weekly and model quota bars.">
+  </picture>
 </p>
 
 ## Features

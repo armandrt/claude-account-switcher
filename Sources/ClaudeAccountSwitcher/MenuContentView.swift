@@ -312,6 +312,8 @@ extension MenuContentView {
                     .buttonStyle(ChipButtonStyle())
                     .disabled(model.busySlot != nil)
                     .help("Renew every expired account now")
+                Spacer(minLength: 4)
+                LaunchAtLoginToggle(login: model.launchAtLogin)
             }
         }
     }

@@ -32,12 +32,15 @@ public enum PanelScreenshot {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         NSApp?.appearance = appearance
 
+        // The picture shows the switch off, whatever this Mac has registered.
+        LaunchAtLogin.pinned = .off
         let model = AppModel.forScreenshot()
+        // The colour scheme goes on last so the background resolves in it too.
         let renderer = ImageRenderer(content:
             MenuContentView(model: model, isRendering: true)
-                .environment(\.colorScheme, dark ? .dark : .light)
-                .background(Color(nsColor: dark ? .windowBackgroundColor : .windowBackgroundColor))
-                .frame(width: MenuContentView.width))
+                .background(Color(nsColor: .windowBackgroundColor))
+                .frame(width: MenuContentView.width)
+                .environment(\.colorScheme, dark ? .dark : .light))
         renderer.scale = 2
 
         // The appearance has to be current while the view is rasterised, or the
