@@ -53,10 +53,6 @@ cask "claude-account-switcher" do
   ]
 
   caveats <<~EOS
-    The first launch asks for your keychain password: the app reads and writes
-    Claude Code's keychain login. "Always Allow" answers it for good; it asks
-    again after an update, because the signature changes with each build.
-
     This build is not notarised (no Apple Developer Program membership). The cask
     clears the download quarantine for you after installing, which is what a
     direct downloader does by hand with `xattr -dr com.apple.quarantine`.

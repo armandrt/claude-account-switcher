@@ -36,8 +36,7 @@ extra step before its first launch (Homebrew does this for you):
 xattr -dr com.apple.quarantine /Applications/ClaudeAccountSwitcher.app
 ```
 
-Requires macOS 14 or later. On first launch macOS asks for access to the keychain; choose
-**Always Allow**.
+Requires macOS 14 or later.
 
 ## Usage
 
