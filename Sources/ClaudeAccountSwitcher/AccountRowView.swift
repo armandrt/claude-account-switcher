@@ -32,6 +32,8 @@ struct AccountRowView: View {
     }
 
     let row: AccountRow
+    /// The account to use now: it wears an aura and says so.
+    var isBest = false
     /// Set while the panel is drawn to a PNG: `ImageRenderer` paints a draggable
     /// view in its "cannot drop here" state, an artefact of rendering offscreen.
     var isRendering = false
@@ -115,9 +117,10 @@ struct AccountRowView: View {
     /// Hover text, for the day a non-activating panel is allowed one: what a
     /// click does, and how old the numbers are when they are not fresh.
     private var tooltip: String {
-        let base = canAct ? "Switch to \(row.name)"
+        var base = canAct ? "Switch to \(row.name)"
             : row.slot.isActive ? "\(row.name) is the live login"
             : "\(row.name): \(row.slot.health.label)"
+        if isBest { base += " · best now: still usable and first to reset" }
         guard let age = row.age() else { return base }
         return "\(base) · numbers \(MenuBarLabel.ageText(age))"
     }
@@ -160,6 +163,7 @@ struct AccountRowView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             if row.slot.isActive { pill("Live", colour: .accentColor) }
+            if isBest { pill("best now", colour: Palette.auraInk) }
             if row.isFake { pill("demo", colour: .secondary) }
         }
     }
@@ -379,7 +383,21 @@ extension AccountRowView {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .strokeBorder(Color.accentColor.opacity(row.slot.isActive ? 0.26 : 0),
                                   lineWidth: 1))
+            .overlay(aura)
             .animation(.easeOut(duration: 0.22), value: row.slot.isActive)
+            .animation(.easeOut(duration: 0.35), value: isBest)
+    }
+
+    /// The aura: a soft ring and glow around the account to use now, so the eye
+    /// lands on it before reading a single number.
+    @ViewBuilder private var aura: some View {
+        if isBest && !isRenaming && !isRemoving {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .strokeBorder(Palette.auraStroke, lineWidth: 1.5)
+                .shadow(color: Palette.aura.opacity(0.55), radius: 5)
+                .shadow(color: Palette.aura.opacity(0.25), radius: 12)
+                .allowsHitTesting(false)
+        }
     }
 
     private var fillColour: Color {

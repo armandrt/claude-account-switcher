@@ -556,15 +556,26 @@ extension AppModel {
             policyStatus = nil
             return
         }
-        // One clock for the whole decision, and the same rolled reading the row and the
-        // mark are drawn from: a window past its reset is empty again, so the raw
-        // snapshot would have the policy switch away from an account that has refilled.
         let now = Date()
-        let accounts = rows.filter { !$0.isFake }.enumerated().map { index, row in
+        let accounts = policyAccounts(now: now)
+        let decision = policy.evaluate(mode: mode, accounts: accounts, active: activeRow?.name,
+                                       now: now, lastSwitchAt: lastSwitchAt)
+        act(on: decision, accounts: accounts, now: now)
+    }
+}
+
+extension AppModel {
+    /// The rows as the policy and the pick see them, from the same rolled reading
+    /// the row and the mark are drawn from: a window past its reset is empty again,
+    /// so the raw snapshot would have the policy switch away from an account that
+    /// has refilled.
+    func policyAccounts(now: Date) -> [PolicyAccount] {
+        // A CAS_FAKE_ACCOUNTS row has no keychain item: neither a target nor a pick.
+        rows.filter { !$0.isFake }.enumerated().map { index, row in
             let usage = row.usage(now: now)
             return PolicyAccount(
                 name: row.name,
-                // The list order, which is the dragged one: the policy's tie-breaker.
+                // The list order, which is the dragged one: the tie-breaker.
                 order: index,
                 sessionPercent: usage?.sessionPercent,
                 weeklyPercent: usage?.weeklyPercent,
@@ -573,9 +584,13 @@ extension AppModel {
                 blockedForModelInUse: false,
                 isUsable: row.slot.health.isUsable)
         }
-        let decision = policy.evaluate(mode: mode, accounts: accounts, active: activeRow?.name,
-                                       now: now, lastSwitchAt: lastSwitchAt)
-        act(on: decision, accounts: accounts, now: now)
+    }
+
+    /// The account to use now (see `BestPick`), live or not. Only shown; it never
+    /// switches anything, whatever the mode.
+    var bestPick: BestPick.Pick? {
+        let now = Date()
+        return BestPick.choose(policyAccounts(now: now), now: now)
     }
 }
 
@@ -756,9 +771,9 @@ extension AppModel {
                 + (row.problem.map { " problem: \($0)" } ?? "")
         }.joined(separator: " | ")
         let label = MenuBarTitle.label(for: activeRow)
-        NSLog("[CAS] mark=%@ (%@) tooltip=\"%@\" wait=%ds | %@",
+        NSLog("[CAS] mark=%@ (%@) tooltip=\"%@\" wait=%ds pick=%@ | %@",
               label.tone.rawValue, label.toneSource.rawValue, label.text,
-              Int(budget.waitTime(now: now)), detail)
+              Int(budget.waitTime(now: now)), bestPick?.name ?? "none", detail)
     }
 }
 

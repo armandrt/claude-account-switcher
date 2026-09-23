@@ -40,6 +40,21 @@ enum Palette {
     }
 
     /// A gauge is a gradient, not a flat block: it gives the capsule its shape.
+    /// The aura around the account to use now: not the gauges' green, not a warning's
+    /// amber, and not the accent, which the owner may have set to either.
+    static let aura = Color(nsColor: .systemTeal)
+    static var auraStroke: LinearGradient {
+        LinearGradient(colors: [aura, aura.opacity(0.55), aura],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    /// The pill's ink: systemTeal is 2:1 on white, so in light mode the words get a
+    /// deeper teal of the same hue; dark mode keeps systemTeal, already 6:1 there.
+    static let auraInk = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? .systemTeal
+            : NSColor(srgbRed: 10 / 255, green: 99 / 255, blue: 112 / 255, alpha: 1)
+    })
+
     static func fill(_ colour: Color) -> LinearGradient {
         LinearGradient(colors: [colour.opacity(0.62), colour],
                        startPoint: .leading, endPoint: .trailing)

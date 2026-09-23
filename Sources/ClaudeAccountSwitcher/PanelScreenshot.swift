@@ -94,8 +94,8 @@ extension AppModel {
     }
 
     /// Three accounts that between them show everything the panel can say: one
-    /// live and comfortable, one nearly out of its week with a model spent, and
-    /// one whose token has expired and wears its own fix.
+    /// live and comfortable, one nearly out of a week that ends first — so it is
+    /// the one to use now — and one whose token has expired and wears its own fix.
     @MainActor
     static func demoRows(now: Date = Date()) -> [AccountRow] {
         func credentials(expired: Bool = false) -> OAuthCredentials {
@@ -106,7 +106,8 @@ extension AppModel {
                 scopes: ["user:profile", "user:inference"], subscriptionType: "max")
         }
         func row(_ name: String, active: Bool, health: CredentialHealth,
-                 session: Double?, weekly: Double?, model: Double?) -> AccountRow {
+                 session: Double?, weekly: Double?, model: Double?,
+                 weekEndsIn: TimeInterval = 212_000) -> AccountRow {
             let slot = Slot(name: name, isActive: active, health: health,
                             credentials: credentials(expired: health == .expired),
                             account: OAuthAccount(emailAddress: "\(name)@example.com",
@@ -120,12 +121,12 @@ extension AppModel {
                            resetsAt: now.addingTimeInterval(11_400)),
                 UsageLimit(kind: .weeklyAll, percent: weekly,
                            severity: weekly >= 92 ? .critical : weekly >= 78 ? .warning : .normal,
-                           resetsAt: now.addingTimeInterval(212_000)),
+                           resetsAt: now.addingTimeInterval(weekEndsIn)),
             ]
             if let model {
                 limits.append(UsageLimit(kind: .weeklyScoped, percent: model,
                                          severity: model >= 92 ? .critical : .normal,
-                                         resetsAt: now.addingTimeInterval(212_000),
+                                         resetsAt: now.addingTimeInterval(weekEndsIn),
                                          modelDisplayName: "Fable"))
             }
             row.usage = UsageSnapshot(limits: limits, fetchedAt: now.addingTimeInterval(-40))
@@ -135,7 +136,8 @@ extension AppModel {
         }
         return [
             row("work", active: true, health: .ok, session: 24, weekly: 38, model: 62),
-            row("personal", active: false, health: .ok, session: 0, weekly: 97, model: 100),
+            row("personal", active: false, health: .ok, session: 0, weekly: 97, model: 88,
+                weekEndsIn: 72_060),
             row("spare", active: false, health: .expired, session: nil, weekly: nil, model: nil),
         ]
     }

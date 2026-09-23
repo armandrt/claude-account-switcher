@@ -25,10 +25,17 @@ extension AppModel {
                                    state: autoState, now: now, lastSwitchAt: lastSwitchAt)
         switch verdict {
         case .act(let target):
+            // The aura ranks by soonest reset; the modes rank by quota left per hour.
+            // When they disagree the sentence says so, so a switch away from the
+            // aura never looks like a mistake.
+            var reason = decision.reason
+            if let pick = BestPick.choose(accounts, now: now)?.name, pick != target {
+                reason += " (the aura stays on \(pick), first to reset; \(mode.title) ranks by quota per hour)"
+            }
             policyStatus = PolicyStatus(headline: armedHeadline,
-                                        detail: "switching to \(target) — \(decision.reason)",
+                                        detail: "switching to \(target) — \(reason)",
                                         isHolding: false)
-            automaticSwitch(to: target, reason: decision.reason)
+            automaticSwitch(to: target, reason: reason)
         case .hold(let refusal):
             recordHeld(decision, held: refusal.text)
             policyStatus = status(for: decision, refusal: refusal)

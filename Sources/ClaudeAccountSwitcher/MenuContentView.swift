@@ -83,6 +83,7 @@ extension MenuContentView {
 
                 AccountRowView(
                     row: row,
+                    isBest: model.bestPick?.name == row.name,
                     isRendering: isRendering,
                     isBusy: model.busySlot == row.name,
                     hasUnstoredTokens: model.unstoredSlots.contains(row.name),
@@ -158,6 +159,7 @@ extension MenuContentView {
     /// Opt-in, and only what is true: the panel's own controls say what they do.
     private var help: some View {
         VStack(alignment: .leading, spacing: 5) {
+            legend("Aura", "use this one now: still usable, first to reset")
             legend("Click", "switch to that account")
             legend("⌥-click", "see the steps first")
             legend("Drag", "reorder the list")

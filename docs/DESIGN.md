@@ -341,6 +341,20 @@ terminal.
 - A login whose email is already stored under another name gets a warning: two slots for one
   account share one quota and the panel would double-count it.
 
+### 4.8b The aura says which account to use now
+
+One row wears an aura and the words "best now". The rule (`BestPick`) is the owner's: any
+account that can still run is a candidate — 97% used is still usable, and what is left is
+meant to be spent — and among them the one whose weekly window resets soonest comes first,
+because whatever it has left is lost at that reset. A used-up model-scoped limit changes
+nothing: the other models still run there, and the row's own bar says which is out. Ties go
+to the one with less left, so it is finished, then to the dragged order. It is drawn from the
+same rolled reading as the bars, and it only shows: no mode switches because of it. It is not
+the modes' rule (§4.9), which weighs what is left against the hours until reset; when an armed
+mode lands elsewhere, its sentence in the footer, the log and the notification says where the
+aura is and why they differ. The aura answers "what do I click now", Balance answers "where
+should new work go over the week".
+
 ### 4.9 Automatic switching is armed, capped, and disarms itself
 
 Manual is the default and switches nothing. Failover and Balance may switch on their own, and
