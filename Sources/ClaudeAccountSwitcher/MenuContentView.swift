@@ -19,6 +19,14 @@ struct MenuContentView: View {
     @State private var showAdd = false
     @State private var showLog = false
 
+    /// `openRow` names a row whose numbers start open — the screenshot renderer
+    /// uses it to picture the disclosure; the live panel starts with none.
+    init(model: AppModel, isRendering: Bool = false, openRow: String? = nil) {
+        _model = ObservedObject(wrappedValue: model)
+        self.isRendering = isRendering
+        _expanded = State(initialValue: openRow)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // A confirmation takes the panel over rather than stacking on the list.

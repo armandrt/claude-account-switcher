@@ -138,6 +138,7 @@ struct AccountRowView: View {
                     nameLine
                     Spacer(minLength: 8)
                     trailing
+                    disclosure
                 }
                 .frame(height: 20)
                 bars
@@ -255,15 +256,16 @@ extension AccountRowView {
         }
     }
 
-    /// The hover control, and the only one: a word that opens the same named
-    /// items the right-click menu holds.  An icon on its own says nothing.
+    /// The hover menu: a word that opens the same named items the right-click
+    /// menu holds.  An icon on its own says nothing — and no arrow here, so the
+    /// row's one arrow is the disclosure that opens and closes its numbers.
     private var moreMenu: some View {
         Menu {
             menu
         } label: {
             HStack(spacing: 3) {
                 Text("More")
-                Image(systemName: "chevron.down").font(.system(size: 7, weight: .black))
+                Image(systemName: "ellipsis").font(.system(size: 8, weight: .black))
             }
             .font(.system(size: 10.5, weight: .medium))
             .foregroundStyle(.secondary)
@@ -275,6 +277,31 @@ extension AccountRowView {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+    }
+
+    /// The one arrow of the row: it opens the numbers and, pointing up, closes
+    /// them again.  It stays visible while the numbers are open — a closed row
+    /// shows it under the pointer only — so the way back is always on screen,
+    /// and a tap on the row keeps its meaning (a switch) instead of doubling as
+    /// the close.
+    private var disclosure: some View {
+        let shown = isExpanded || showsMenu
+        return Button(action: onToggleDetail) {
+            Image(systemName: "chevron.down")
+                .font(.system(size: 8, weight: .black))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                .frame(width: 18, height: 18)
+                .background(Circle().fill(Color.primary.opacity(shown ? 0.10 : 0)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .opacity(shown ? 1 : 0)
+        .allowsHitTesting(shown)
+        .help(isExpanded ? "Hide the numbers" : "Show the numbers")
+        .accessibilityLabel(isExpanded ? "Hide the numbers" : "Show the numbers")
+        .animation(.easeOut(duration: 0.18), value: isExpanded)
+        .animation(.easeOut(duration: 0.12), value: showsMenu)
     }
 
     private func fixButton(_ fix: RowFix) -> some View {

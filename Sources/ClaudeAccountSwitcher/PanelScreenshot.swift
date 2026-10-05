@@ -10,7 +10,9 @@ import SwitcherCore
 /// app and it can never drift from what the app looks like:
 ///
 ///     ClaudeAccountSwitcher.app/Contents/MacOS/ClaudeAccountSwitcher \
-///         --screenshot docs/panel.png [--dark]
+///         --screenshot docs/panel.png [--dark] [--open <row name>]
+///
+/// `--open` pictures that row with its numbers open, the disclosure pointing up.
 public enum PanelScreenshot {
     public static func renderIfAsked() {
         let arguments = CommandLine.arguments
@@ -21,14 +23,17 @@ public enum PanelScreenshot {
         }
         let url = URL(fileURLWithPath: arguments[flag + 1])
         let dark = arguments.contains("--dark")
+        let open = arguments.firstIndex(of: "--open").flatMap { at in
+            at + 1 < arguments.count ? arguments[at + 1] : nil
+        }
         MainActor.assumeIsolated {
-            render(to: url, dark: dark)
+            render(to: url, dark: dark, openRow: open)
         }
         exit(0)
     }
 
     @MainActor
-    private static func render(to url: URL, dark: Bool) {
+    private static func render(to url: URL, dark: Bool, openRow: String?) {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         NSApp?.appearance = appearance
 
@@ -37,7 +42,7 @@ public enum PanelScreenshot {
         let model = AppModel.forScreenshot()
         // The colour scheme goes on last so the background resolves in it too.
         let renderer = ImageRenderer(content:
-            MenuContentView(model: model, isRendering: true)
+            MenuContentView(model: model, isRendering: true, openRow: openRow)
                 .background(Color(nsColor: .windowBackgroundColor))
                 .frame(width: MenuContentView.width)
                 .environment(\.colorScheme, dark ? .dark : .light))
