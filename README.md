@@ -41,8 +41,9 @@ Requires macOS 14 or later.
 ## Usage
 
 Click the mark in the menu bar to open the panel. The row with an aura is the account to use
-now: still usable, and the first whose week resets. Click an account to switch to it; **More**
-on a row renews, renames or removes it; drag rows to reorder. **Add account** signs in through
+now: still usable, and the first whose week resets. Click an account to switch to it; the arrow
+on a row opens its numbers and closes them again; **More** renews, renames or removes it; drag
+rows to reorder. **Add account** signs in through
 the browser. New `claude` sessions use the new login straight away.
 
 ## Building from source
